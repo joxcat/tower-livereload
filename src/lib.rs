@@ -134,6 +134,7 @@ pub struct LiveReloadLayer<ReqPred = Always, ResPred = ContentTypeStartsWith<&'s
     req_predicate: ReqPred,
     res_predicate: ResPred,
     reload_interval: Duration,
+    redirect_on_statuses: Vec<u16>, 
 }
 
 impl LiveReloadLayer {
@@ -149,6 +150,7 @@ impl LiveReloadLayer {
             req_predicate: Always,
             res_predicate: ContentTypeStartsWith::new("text/html"),
             reload_interval: Duration::from_secs(1),
+            redirect_on_statuses: Vec::new(),
         }
     }
 
@@ -190,6 +192,7 @@ impl<ReqPred, ResPred> LiveReloadLayer<ReqPred, ResPred> {
             req_predicate: predicate,
             res_predicate: self.res_predicate,
             reload_interval: self.reload_interval,
+            redirect_on_statuses: self.redirect_on_statuses,
         }
     }
 
@@ -217,6 +220,7 @@ impl<ReqPred, ResPred> LiveReloadLayer<ReqPred, ResPred> {
             req_predicate: self.req_predicate,
             res_predicate: predicate,
             reload_interval: self.reload_interval,
+            redirect_on_statuses: self.redirect_on_statuses,
         }
     }
 
@@ -227,6 +231,15 @@ impl<ReqPred, ResPred> LiveReloadLayer<ReqPred, ResPred> {
             ..self
         }
     }
+
+    /// Set the statuses where the redirect should happen
+    /// (empty redirect on all statuses)
+    pub fn redirect_on_statuses(self, statuses: &[u16]) -> Self {
+        Self {
+            redirect_on_statuses: statuses.to_vec(),
+            ..self
+        }
+    } 
 
     /// Return a manual [`Reloader`] trigger for the given [`LiveReloadLayer`].
     pub fn reloader(&self) -> Reloader {
@@ -250,10 +263,12 @@ impl<S, ReqPred: Copy, ResPred: Copy> Layer<S> for LiveReloadLayer<ReqPred, ResP
             self.req_predicate,
             self.res_predicate,
             self.reload_interval,
+            &self.redirect_on_statuses,
             self.custom_prefix
                 .as_ref()
                 .cloned()
                 .unwrap_or_else(|| DEFAULT_PREFIX.to_owned()),
+            
         )
     }
 }
@@ -278,11 +293,13 @@ impl<S, ReqPred, ResPred> LiveReload<S, ReqPred, ResPred> {
         req_predicate: ReqPred,
         res_predicate: ResPred,
         reload_interval: Duration,
+        redirect_on_statuses: &[u16],
         prefix: P,
     ) -> Self {
         let prefix = prefix.into();
         let long_poll_path = format!("{}/long-poll", prefix);
         let back_up_path = format!("{}/back-up", prefix);
+        let redirect_on_statuses: String = redirect_on_statuses.iter().map(u16::to_string).collect::<Vec<_>>().join(",");
         let inject = InjectService::new(
             service,
             format!(
@@ -290,6 +307,7 @@ impl<S, ReqPred, ResPred> LiveReload<S, ReqPred, ResPred> {
                 long_poll = long_poll_path,
                 back_up = back_up_path,
                 reload_interval = reload_interval.as_millis(),
+                redirect_on_statuses = redirect_on_statuses,
             )
             .into(),
             req_predicate,

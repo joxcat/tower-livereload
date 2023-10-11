@@ -7,8 +7,12 @@
 
   const retry = (url) =>
     fetch(url, {{ cache: "no-store" }})
-      .then(() => console.log("[tower-livereload] reload..."))
-      .then(() => window.location.reload())
+      .then((rsp) => {{
+        console.log("[tower-livereload] reload...");
+        const redirect_on_statuses = [{redirect_on_statuses}];
+        if (redirect_on_statuses.length === 0 || redirect_on_statuses.includes(rsp.status)) window.location.reload();
+        else return Promise.reject();
+      }})
       .catch(() => setTimeout(() => retry(url), {reload_interval}));
 
   const main = () =>
