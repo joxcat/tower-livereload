@@ -1,9 +1,9 @@
-//! A middleware for browser reloading, built on top of [tower].
+//! A middleware for browser reloading, built on top of [`tower`].
 //!
 //! # Example
 //!
-//! Note that [axum] is only used as an example here, pretty much any Rust HTTP
-//! library or framework will be compatible!
+//! Note that [`axum`] is only used as an example here, pretty much any Rust
+//! HTTP library or framework will be compatible!
 //!
 //! ```
 //! use axum::{response::Html, routing::get, Router};
@@ -15,23 +15,22 @@
 //!         .route("/", get(|| async { Html("<h1>Wow, such webdev</h1>") }))
 //!         .layer(LiveReloadLayer::new());
 //!
-//!     axum::Server::bind(&"0.0.0.0:3030".parse()?)
-//!         .serve(app.into_make_service())
-//!         .await?;
+//!     let listener = tokio::net::TcpListener::bind("0.0.0.0:3030").await?;
+//!     axum::serve(listener, app).await?;
 //!
 //!     Ok(())
 //! }
 //! ```
 //!
-//! If you continuously rebuild and rerun this example e.g. using [watchexec],
+//! If you continuously rebuild and rerun this example e.g. using [`watchexec`],
 //! you should see your browser reload whenever the code is changed.
 //!
 //! More examples can be found on GitHub under [examples].
 //!
-//! [axum]: https://docs.rs/axum
-//! [tower]: https://docs.rs/tower
+//! [`axum`]: https://docs.rs/axum
+//! [`tower`]: https://docs.rs/tower
+//! [`watchexec`]: https://watchexec.github.io/
 //! [examples]: https://github.com/leotaku/tower-livereload/tree/master/examples
-//! [watchexec]: https://watchexec.github.io/
 //!
 //! # Manual reload
 //!
@@ -39,7 +38,7 @@
 //! entirely using hooks from Rust code. See this [example] on GitHub for
 //! pointers on how to implement a self-contained live-reloading static server.
 //!
-//! [example]: https://github.com/leotaku/tower-livereload/blob/master/examples/axum-in-process/
+//! [example]: https://github.com/leotaku/tower-livereload/blob/master/examples/axum-file-watch/
 //!
 //! # Ecosystem compatibility
 //!
@@ -257,6 +256,7 @@ impl<S, ReqPred: Copy, ResPred: Copy> Layer<S> for LiveReloadLayer<ReqPred, ResP
     type Service = LiveReload<S, ReqPred, ResPred>;
 
     fn layer(&self, inner: S) -> Self::Service {
+        #[allow(deprecated)]
         LiveReload::new(
             inner,
             self.reloader.clone(),
@@ -286,6 +286,10 @@ pub struct LiveReload<S, ReqPred = Always, ResPred = ContentTypeStartsWith<&'sta
 }
 
 impl<S, ReqPred, ResPred> LiveReload<S, ReqPred, ResPred> {
+    #[deprecated(
+        since = "0.9.0",
+        note = "please use `LiveReloadLayer::new().layer(service)` instead"
+    )]
     /// Create a new [`LiveReload`] middleware.
     pub fn new<P: Into<String>>(
         service: S,

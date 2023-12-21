@@ -15,12 +15,12 @@
 [librs-badge]: https://img.shields.io/badge/lib.rs-linked-informational
 [docs-badge]: https://img.shields.io/docsrs/tower-livereload
 
-A middleware for browser reloading, built on top of [tower].
+A middleware for browser reloading, built on top of [`tower`].
 
 ## Example
 
-Note that [axum] is only used as an example here, pretty much any Rust HTTP
-library or framework will be compatible!
+Note that [`axum`] is only used as an example here, pretty much any Rust
+HTTP library or framework will be compatible!
 
 ```rust
 use axum::{response::Html, routing::get, Router};
@@ -32,23 +32,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/", get(|| async { Html("<h1>Wow, such webdev</h1>") }))
         .layer(LiveReloadLayer::new());
 
-    axum::Server::bind(&"0.0.0.0:3030".parse()?)
-        .serve(app.into_make_service())
-        .await?;
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3030").await?;
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
 ```
 
-If you continuously rebuild and rerun this example e.g. using [watchexec],
+If you continuously rebuild and rerun this example e.g. using [`watchexec`],
 you should see your browser reload whenever the code is changed.
 
 More examples can be found on GitHub under [examples].
 
-[axum]: https://docs.rs/axum
-[tower]: https://docs.rs/tower
+[`axum`]: https://docs.rs/axum
+[`tower`]: https://docs.rs/tower
+[`watchexec`]: https://watchexec.github.io/
 [examples]: https://github.com/leotaku/tower-livereload/tree/master/examples
-[watchexec]: https://watchexec.github.io/
 
 ## Manual reload
 
@@ -56,7 +55,7 @@ With the [`Reloader`] utility, it is possible to reload your web browser
 entirely using hooks from Rust code. See this [example] on GitHub for
 pointers on how to implement a self-contained live-reloading static server.
 
-[example]: https://github.com/leotaku/tower-livereload/blob/master/examples/axum-in-process/
+[example]: https://github.com/leotaku/tower-livereload/blob/master/examples/axum-file-watch/
 
 ## Ecosystem compatibility
 
